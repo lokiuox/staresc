@@ -81,7 +81,7 @@ tests:
   - command: 'sudo --version'
     parsers:
       - parser_type: 'extractor'
-				part: 'stdout'
+        part: 'stdout'
         rule_type: 'regex'
         rules:
           - 'Sudo version .*\n'
@@ -130,7 +130,7 @@ Giving the following portion from our example plugin, we can see that an extract
 command: 'sudo --version'
 parsers:
   - parser_type: 'extractor'
-		part: 'stdout'
+    part: 'stdout'
     rule_type: 'regex'
     rules:
       - 'Sudo version .*\n'
@@ -216,7 +216,7 @@ The following portion of the example plugin defines two parsers for the result o
 command: 'sudo --version'
 parsers:
   - parser_type: 'extractor'
-		part: 'stdout'
+    part: 'stdout'
     rule_type: 'regex'
     rules:
       - 'Sudo version .*\n'
@@ -274,7 +274,7 @@ For example the following test is possible:
 command: 'sudo --version'
 parsers:
   - parser_type: 'extractor'
-		part: 'stdout'
+    part: 'stdout'
     rule_type: 'regex'
     rules:
       - 'Sudo version .*\n'
@@ -314,48 +314,48 @@ The file content has the following format:
 
 ```json
 {
-  "staresc": [
-    {
-      "plugin": <plugin1_filename>,
-      "results": [
-        {
-          "stdin": <test1_stdin>,
-          "stdout": <test1_stdout>,
-          "stderr": <test1_stderr>
-        },
-        {
-          "stdin": <test2_stdin>,
-          "stdout": <test2_stdout>,
-          "stderr": <test2_stderr>
-        },
+	"staresc": [
+		{
+			"plugin": <plugin1_filename>,
+			"results": [
+				{
+					"stdin": <test1_stdin>,
+					"stdout": <test1_stdout>,
+					"stderr": <test1_stderr>
+				},
+				{
+					"stdin": <test2_stdin>,
+					"stdout": <test2_stdout>,
+					"stderr": <test2_stderr>
+				},
 				...
-      ],
-      "parse_results": [
-        [
-          <test1_matched_extracted>,
-          {
-            "stdout": <test1_extracted_stdout>,
-            "stderr": <test1_extracted_stderr>
-          }
-        ],
-        [
-          <test2_matched_extracted>,
-          {
-            "stdout": <test2_extracted_stdout>,
-            "stderr": <test2_extracted_stderr>
-          }
-        ]
-      ],
-      "parsed": <is_parsed>
-    },
-    {
-      "plugin": <plugin2_filename>,
+			],
+			"parse_results": [
+				[
+					<test1_matched_extracted>,
+					{
+						"stdout": <test1_extracted_stdout>,
+						"stderr": <test1_extracted_stderr>
+					}
+				],
+				[
+					<test2_matched_extracted>,
+					{
+						"stdout": <test2_extracted_stdout>,
+						"stderr": <test2_extracted_stderr>
+					}
+				]
+			],
+			"parsed": <is_parsed>
+		},
+		{
+			"plugin": <plugin2_filename>,
 			...
-    }
+		}
 		...
-  ],
-  "connection_string": <connection_string>,
-  "elevated": <is_elevated>
+	],
+	"connection_string": <connection_string>,
+	"elevated": <is_elevated>
 }
 ```
 
@@ -371,41 +371,41 @@ The following JSON snippet shows the output of Staresc executed with the example
 
 ```json
 {
-  "staresc": [
-    {
-      "plugin": "CVE-2021-3156.yaml",
-      "results": [
-        {
-          "stdin": "sudoedit -s '0123456789\\'",
-          "stdout": "malloc(): invalid next size (unsorted)",
-          "stderr": ""
-        },
-        {
-          "stdin": "/usr/local/bin/sudo --version",
-          "stdout": "Sudo version 1.8.31p2\r\nSudoers policy plugin version 1.8.31p2\r\nSudoers file grammar version 46\r\nSudoers I/O plugin version 1.8.31p2",
-          "stderr": ""
-        }
-      ],
-      "parse_results": [
-        [
-          true,
-          {
-            "stdout": "malloc(): invalid next size (unsorted)",
-            "stderr": ""
-          }
-        ],
-        [
-          true,
-          {
-            "stdout": "1.8.31",
-            "stderr": ""
-          }
-        ]
-      ],
-      "parsed": true
-    }
-  ],
-  "connection_string": "ssh://test_username:test_passwd@192.168.0.2:22/root:rootpasswd",
-  "elevated": true
+	"staresc": [
+		{
+			"plugin": "CVE-2021-3156.yaml",
+			"results": [
+				{
+					"stdin": "sudoedit -s '0123456789\\'",
+					"stdout": "malloc(): invalid next size (unsorted)",
+					"stderr": ""
+				},
+				{
+					"stdin": "/usr/local/bin/sudo --version",
+					"stdout": "Sudo version 1.8.31p2\r\nSudoers policy plugin version 1.8.31p2\r\nSudoers file grammar version 46\r\nSudoers I/O plugin version 1.8.31p2",
+					"stderr": ""
+				}
+			],
+			"parse_results": [
+				[
+					true,
+					{
+						"stdout": "malloc(): invalid next size (unsorted)",
+						"stderr": ""
+					}
+				],
+				[
+					true,
+					{
+						"stdout": "1.8.31",
+						"stderr": ""
+				}
+				]
+			],
+			"parsed": true
+		}
+	],
+	"connection_string": "ssh://test_username:test_passwd@192.168.0.2:22/root:rootpasswd",
+	"elevated": true
 }
 ```

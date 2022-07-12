@@ -53,3 +53,14 @@ class StarescPluginError(Exception):
 
     def __init__(self, msg: str):
         super().__init__(msg)
+
+
+class StarescDuplicatedPluginId(Exception):
+    """Exception raised two plugins have the same id
+
+    Attributes:
+        msg -- meesage to be displayed
+    """
+
+    def __init__(self, msg: str):
+        super().__init__(msg)

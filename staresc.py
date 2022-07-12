@@ -154,7 +154,7 @@ def main():
 
     sr = StarescRunner(logger)
     
-    plugins = sr.parse_plugins(plugins_dir)
+    plugins = sr.parse_plugins(plugins_dir) #TODO handle duplicatedpluginid exception
     sr.run(targets, plugins)
 
 

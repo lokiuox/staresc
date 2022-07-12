@@ -6,7 +6,7 @@ from staresc.log import StarescLogger
 from staresc.core import Staresc
 from staresc.exporter import StarescExporter
 from staresc.plugin_parser import Plugin
-
+from staresc.exceptions import StarescDuplicatedPluginId
 
 class StarescRunner:
     """StarescRunner is a factory for Staresc objects
@@ -74,6 +74,7 @@ class StarescRunner:
     def parse_plugins(plugins_dir: str = None) -> list[Plugin]:
         """Static method to parse plugins"""
         plugins = []
+        plugins_ids = {}
 
         if not plugins_dir.startswith('/'):
             plugins_dir = os.path.join(os.getcwd(), plugins_dir)
@@ -85,6 +86,8 @@ class StarescRunner:
                 plugin_content = yaml.load(f.read(), Loader=yaml.Loader)
                 f.close()
                 tmp_plugin = Plugin(plugin_content)
+                if tmp_plugin.id in plugins_ids:
+                    raise StarescDuplicatedPluginId(f"PLugin files {plugins_ids[tmp_plugin.id]} and {plugin_filename} have the same id: {tmp_plugin.id}")
                 plugins.append(tmp_plugin)
 
         return plugins

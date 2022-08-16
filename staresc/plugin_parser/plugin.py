@@ -58,6 +58,11 @@ class Plugin:
 
         CVSSv3 score of the vulnerability
     """
+    cvss_vector: str
+    """CVSS Vector
+
+        CVSSv3 vector of the vulnerability
+    """
     severity: str
     """Vulnerability Severity
 
@@ -121,7 +126,7 @@ class Plugin:
 
         Attributes:
            plugin_content -- dict containing data parsed from the YAML file"""
-        for info in ["name", "cve", "cvss", "author", "description", "severity", "reference", "remediation"]:
+        for info in ["name", "cve", "cvss", "cvss_vector", "author", "description", "severity", "reference", "remediation"]:
             if info in plugin_content:
                 setattr(self, info, plugin_content[info])
 

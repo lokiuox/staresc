@@ -8,8 +8,7 @@ I'm @5amu, welcome!
 """
 
 import argparse
-import os
-from tabnanny import check
+import os, sys
 from staresc.core.check import Checker
 from staresc.core.raw import RawRunner
 
@@ -98,7 +97,7 @@ def starttest():
         r = unittest.TextTestRunner().run(suite)
         logger.info("End of tests")
         if not r.wasSuccessful():
-            exit(1)
+            sys.exit(1)
     
     except Exception as e:
         logger.error(e)
@@ -154,12 +153,12 @@ def main():
         StarescExporter.register_handler(StarescRawHandler(""))
         rr = RawRunner(args, logger)
         rr.run(targets)
-        exit(0)
+        sys.exit(0)
     
     if args.check:
         checker = Checker(logger=logger)
         checker.run(targets=targets)
-        exit(0)
+        sys.exit(0)
 
 
     if not args.plugins:

@@ -137,7 +137,7 @@ class RawWorker:
                     msg=f"Executing {cmd}"
                 )
                 cmd = self.staresc._get_absolute_cmd(cmd)
-                if self.make_temp:
+                if self.cwd != ".":
                     cmd = f"cd {self.cwd} ; " + cmd
                 stdin, stdout, stderr = self.connection.run(cmd, timeout=None, get_pty=self.get_tty)
                 output.add_test_result(stdin, stdout, stderr)

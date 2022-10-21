@@ -10,14 +10,18 @@ import tqdm
 
 class RawWorker:
 
-    def __init__(self, logger, connection_string, make_temp=True, tmp_base="/tmp", get_tty=True):
+    def __init__(self, logger, connection_string, make_temp=True, cwd=None, get_tty=True):
         self.logger = logger
         self.staresc = Staresc(connection_string)
         self.connection = self.staresc.connection
         self.__sftp = None
-        self.make_temp = make_temp
-        self.tmp_base = tmp_base
-        self.tmp = "."
+        self.tmp_base = "/tmp"
+        if cwd is None:
+            self.make_temp = make_temp
+            self.cwd = "."
+        else:
+            self.make_temp = False
+            self.cwd = cwd
         self.get_tty = get_tty
 
     @property
@@ -55,7 +59,7 @@ class RawWorker:
             self.sftp.rmdir(path)
         
         if self.make_temp == True:
-            __rmdir(self.tmp)
+            __rmdir(self.cwd)
 
     class ProgressBar:
         def __init__(self, title):
@@ -89,7 +93,7 @@ class RawWorker:
 
     def push(self, path):
         filename = os.path.basename(path)
-        dest = os.path.join(self.tmp, filename)
+        dest = os.path.join(self.cwd, filename)
 
         self.logger.raw(
             target=self.connection.hostname,
@@ -105,7 +109,7 @@ class RawWorker:
         self.sftp.chmod(dest, 0o777)
 
     def pull(self, filename):
-        path = os.path.join(self.tmp, filename)
+        path = os.path.join(self.cwd, filename)
         base_filename = os.path.basename(filename)
 
         dest_dir = f"staresc_{self.connection.hostname}"
@@ -134,7 +138,7 @@ class RawWorker:
                 )
                 cmd = self.staresc._get_absolute_cmd(cmd)
                 if self.make_temp:
-                    cmd = f"cd {self.tmp} ; " + cmd
+                    cmd = f"cd {self.cwd} ; " + cmd
                 stdin, stdout, stderr = self.connection.run(cmd, timeout=None, get_pty=self.get_tty)
                 output.add_test_result(stdin, stdout, stderr)
             except StarescCommandError:
@@ -143,9 +147,9 @@ class RawWorker:
         return output
 
     def cleanup(self):
-        if self.tmp is not None:
+        if self.cwd is not None:
             self.__delete_temp_dir()
-            self.tmp = None
+            self.cwd = None
         if self.__sftp is not None:
             self.__sftp.close()
 
@@ -159,7 +163,8 @@ class RawRunner:
         self.pull = args.pull
         self.push = args.push
         self.show = args.show
-        self.get_tty = not(args.notty)
+        self.get_tty = not(args.no_tty)
+        self.cwd = args.cwd
 
         # If the you want to just push/pull files, disable the temp dir creation
         if len(self.commands) == 0:
@@ -171,7 +176,13 @@ class RawRunner:
     def launch(self, connection_string: str) -> None:
         """Launch the commands"""
         try:
-            worker = RawWorker(self.logger, connection_string, self.make_temp, get_tty=self.get_tty)
+            worker = RawWorker(
+                logger=self.logger,
+                connection_string=connection_string,
+                make_temp=self.make_temp,
+                cwd=self.cwd,
+                get_tty=self.get_tty)
+
             self.logger.raw(
                 target=worker.connection.hostname,
                 port=worker.connection.port,

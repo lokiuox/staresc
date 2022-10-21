@@ -49,8 +49,9 @@ def cliparse() -> argparse.Namespace:
     rawmode_params.add_argument('--pull', metavar='filename', action='append', default=[], help='pull files from the target')
     rawmode_params.add_argument('--exec', metavar='file', action='store', help='equivalent to "--push file --command ./file"')
     rawmode_params.add_argument('--no-tmp', default=False, action='store_true', help='skip creating temp folder and cd-ing into it')
+    rawmode_params.add_argument('--cwd', metavar='dir', action='store', help='set the working directory; implies --no-tmp')
     rawmode_params.add_argument('--show', default=False, action='store_true', help='show commands output in the terminal')
-    rawmode_params.add_argument('--notty', default=False, action='store_true', help='SSH only: don\'t request a TTY')
+    rawmode_params.add_argument('--no-tty', default=False, action='store_true', help='SSH only: don\'t request a TTY')
 
 
     connection_help  = "schema://user:auth@host:port\n"

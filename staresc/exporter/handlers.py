@@ -243,9 +243,26 @@ class StarescJSONHandler(StarescHandler):
             f.close()
 
 class StarescRawHandler(StarescHandler):
+    def import_handler(self, output: Output):
+        import os
+        
+        output_dir = f"staresc_{output.target.hostname}"
+        os.makedirs(output_dir, exist_ok=True)
 
-    def import_handler(self, o: Output):
-        pass
+        base_filename = f"{output.target.hostname}_live"
+
+        r = output.test_results[-1]
+        if r['stdin'] != '':
+            outstream = "\n$ " + r['stdin'] + "\n"
+        else:
+            outstream = r['stdout'] + "\n"
+
+        errstream = "\n\n".join([r['stderr'] for r in output.test_results])
+        with open(os.path.join(output_dir, base_filename + '.out.log'), 'a+') as f:
+            f.write(outstream)
+        if len(errstream.strip()) > 0:
+            with open(os.path.join(output_dir, base_filename + '.err.log'), 'a+') as f:
+                f.write(errstream)
 
     def export_handler(self, outputs: list[Output], outfile: str):
         from datetime import datetime
@@ -259,7 +276,13 @@ class StarescRawHandler(StarescHandler):
 
             base_filename = f"{output.target.hostname}_{datetime.now().strftime('%m-%d_%H.%M.%S')}"
 
-            outstream = "\n\n".join(["$ " + r['stdin'] + "\n" + r['stdout'] for r in output.test_results])
+            outstream = ""
+            for r in output.test_results:
+                if r['stdin'] != '':
+                    outstream  += "\n$ " + r['stdin'] + "\n"
+                else:
+                    outstream  += r['stdout'] + "\n"
+
             errstream = "\n\n".join([r['stderr'] for r in output.test_results])
             with open(os.path.join(output_dir, base_filename + '.out.log'), 'a+') as f:
                 f.write(outstream)

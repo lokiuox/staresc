@@ -30,7 +30,7 @@ class StarescExporter():
     def export(cls) -> None:
         """Called at the end of execution to produce results"""
         outputs: list[Output] = []
-        for o in list(cls.runs_results.queue):
+        for o in set(cls.runs_results.queue):
             outputs.append(o)
 
         for h in cls.handlers:

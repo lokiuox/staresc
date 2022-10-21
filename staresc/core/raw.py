@@ -7,15 +7,67 @@ from staresc.exceptions import StarescCommandError
 import argparse
 import paramiko
 import tqdm
+import traceback
+
+import logging
+from typing import Tuple
+
+import paramiko
+
+from staresc.exceptions import StarescCommandError, StarescConnectionError
+from staresc.connection import Connection, SSHConnection
+
+logger = logging.getLogger(__name__)
+
+class RAWConnWrapper(SSHConnection):
+    client: paramiko.SSHClient
+
+    def __init__(self, connection: SSHConnection) -> None:
+        super().__init__(connection)
+        self.connection = connection.connection
+        self.ssh_conn = connection
+        self.client = connection.client
+        self.channel = None
+        self.stdin = None
+        self.stdout = None
+        self.stderr = None
+
+    #hostname = ssh_conn.hostname
+    #port = super().hostname
+            
+    def run(self, cmd: str, timeout: float = Connection.command_timeout, bufsize: int = 4096, get_pty=False) -> Tuple[str, str, str]:
+        try:
+            self.channel = self.client.get_transport().open_session()
+            self.channel.settimeout(timeout)
+            
+            if get_pty:
+                self.channel.get_pty()
+
+            self.channel.exec_command(cmd)
+
+        except paramiko.SSHException:
+            msg = f"Couldn't open session when trying to run command: {cmd}"
+            raise StarescConnectionError(msg)
+
+        except TimeoutError:
+            msg = f"command {cmd} timed out"
+            raise StarescCommandError(msg)
+         
+        self.stdin = cmd
+        self.stdout = self.channel.makefile('rb', bufsize)
+        self.stderr = self.channel.makefile_stderr('rb', bufsize)
+
+    def get_output(self):
+        return self.stdout.readline().rstrip(b"\r\n").decode('utf-8')
 
 class RawWorker:
-
-    def __init__(self, logger, connection_string, make_temp=True, cwd=None, get_tty=True):
+    def __init__(self, logger, connection_string, make_temp=True, cwd=None, show=False, get_tty=True):
         self.logger = logger
         self.staresc = Staresc(connection_string)
-        self.connection = self.staresc.connection
+        self.connection = RAWConnWrapper(self.staresc.connection)
         self.__sftp = None
         self.tmp_base = "/tmp"
+        self.show = show
         if cwd is None:
             self.make_temp = make_temp
             self.cwd = "."
@@ -37,7 +89,7 @@ class RawWorker:
         dirname = f"staresc_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         dirpath = os.path.join(self.tmp_base, dirname)
         self.sftp.mkdir(dirpath)
-        self.tmp = dirpath
+        self.cwd = dirpath
         return dirpath
 
     def __delete_temp_dir(self):
@@ -128,7 +180,6 @@ class RawWorker:
 
     def exec(self, cmd_list: list[str]) -> Output:
         output = Output(target=self.connection, plugin=None)
-
         for cmd in cmd_list:
             try:
                 self.logger.raw(
@@ -139,8 +190,18 @@ class RawWorker:
                 cmd = self.staresc._get_absolute_cmd(cmd)
                 if self.cwd != ".":
                     cmd = f"cd {self.cwd} ; " + cmd
-                stdin, stdout, stderr = self.connection.run(cmd, timeout=None, get_pty=self.get_tty)
-                output.add_test_result(stdin, stdout, stderr)
+                output.add_test_result(cmd, '', '')
+                StarescExporter.import_output(output)
+                self.connection.run(cmd, timeout=None, get_pty=self.get_tty)
+                while (line := self.connection.get_output()) != '':
+                    output.add_test_result('', line, '')
+                    StarescExporter.import_output(output)
+                    if self.show:
+                        self.logger.raw(
+                            target=self.connection.hostname,
+                            port=self.connection.port,
+                            msg=line
+                        )
             except StarescCommandError:
                 output.add_timeout_result(stdin=cmd)
 
@@ -181,6 +242,7 @@ class RawRunner:
                 connection_string=connection_string,
                 make_temp=self.make_temp,
                 cwd=self.cwd,
+                show=self.show,
                 get_tty=self.get_tty)
 
             self.logger.raw(
@@ -196,14 +258,7 @@ class RawRunner:
                     worker.push(filename)
 
                 # Execute commands
-                output = worker.exec(self.commands)
-                StarescExporter.import_output(output)
-                if self.show:
-                    self.logger.raw(
-                        target=worker.connection.hostname,
-                        port=worker.connection.port,
-                        msg='\n'.join(e['stdout'] for e in output.test_results)
-                    )
+                worker.exec(self.commands)
 
                 # Pull resulting files
                 for filename in self.pull:
@@ -224,6 +279,7 @@ class RawRunner:
 
         except Exception as e:
             self.logger.error(f"{type(e).__name__}: {e}")
+            traceback.print_exc()
             return
 
     def run(self, targets: list[str]):

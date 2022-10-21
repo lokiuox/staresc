@@ -58,7 +58,8 @@ class RAWConnWrapper(SSHConnection):
         self.stderr = self.channel.makefile_stderr('rb', bufsize)
 
     def get_output(self):
-        return self.stdout.readline().rstrip(b"\r\n").decode('utf-8')
+        out = self.stdout.readline().decode('utf-8')
+        return out.rstrip(b"\r\n") if out != '' else None
 
 class RawWorker:
     def __init__(self, logger, connection_string, make_temp=True, cwd=None, show=False, get_tty=True):
@@ -193,7 +194,7 @@ class RawWorker:
                 output.add_test_result(cmd, '', '')
                 StarescExporter.import_output(output)
                 self.connection.run(cmd, timeout=None, get_pty=self.get_tty)
-                while (line := self.connection.get_output()) != '':
+                while (line := self.connection.get_output()) is not None:
                     output.add_test_result('', line, '')
                     StarescExporter.import_output(output)
                     if self.show:

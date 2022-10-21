@@ -59,7 +59,7 @@ class RAWConnWrapper(SSHConnection):
 
     def get_output(self):
         out = self.stdout.readline().decode('utf-8')
-        return out.rstrip(b"\r\n") if out != '' else None
+        return out.rstrip("\r\n") if out != '' else None
 
 class RawWorker:
     def __init__(self, logger, connection_string, make_temp=True, cwd=None, show=False, get_tty=True):
